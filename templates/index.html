@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analizador Bayesiano | Edición Miku</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>
+        :root {
+            --pico-primary: #39c5bb;
+            --pico-primary-hover: #2ba69d;
+            --pico-primary-focus: rgba(57, 197, 187, 0.25);
+        }
+
+        body {
+            background-image: url("{{ url_for('static', filename='miku.png') }}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed; 
+            color: #e0fefb;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        article {
+            background-color: rgba(13, 22, 35, 0.85) !important; 
+            backdrop-filter: blur(8px); 
+            border: 1px solid rgba(57, 197, 187, 0.3) !important; 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.7);
+        }
+
+        .grafica-container img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+            margin-bottom: 1.5rem;
+        }
+        
+        .resaltado {
+            color: #39c5bb; 
+            font-size: 1.5rem;
+            text-shadow: 0 0 10px rgba(57, 197, 187, 0.5); 
+        }
+        
+        .tabla-contenedor {
+            overflow-x: auto;
+            margin-bottom: 2rem;
+        }
+        
+        table {
+            font-size: 0.85rem;
+        }
+        
+        table tbody tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body>
+    <header class="container">
+        <nav>
+            <ul>
+                <li><strong style="color: #39c5bb;">🎵 Proyecto Bayesiano</strong></li>
+            </ul>
+            <ul>
+                <li>Probabilidad y Estadística</li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="container">
+        <article>
+            <header><strong>Paso 1: Cargar Set de Datos</strong></header>
+            
+            {% if error %}
+            <article style="background-color: rgba(255, 0, 0, 0.2); color: #ff8a80; border: 1px solid #ff5252;">
+                <strong>⚠️ Error:</strong> {{ error }}
+            </article>
+            {% endif %}
+
+            <form id="formulario-bayes" method="POST" enctype="multipart/form-data">
+                <div class="grid">
+                    <div>
+                        <label for="file">1. Sube tu archivo CSV:</label>
+                        <input type="file" id="file" name="file" accept=".csv" required>
+                    </div>
+                    <div>
+                        <label for="target">2. Columna a predecir (Ej. fallo):</label>
+                        <input type="text" id="target" name="target" placeholder="Escribe la variable objetivo" required>
+                    </div>
+                </div>
+                <button type="submit" id="btn-ejecutar">Ejecutar Modelo Matemático</button>
+            </form>
+        </article>
+
+        {% if res %}
+        <article>
+            <header><strong>Vista Previa de los Datos</strong></header>
+            <div class="tabla-contenedor">
+                {{ res.tabla_datos | safe }}
+            </div>
+        </article>
+
+        <div class="grid">
+            <div>
+                <article>
+                    <header><strong>Probabilidad Condicional (Bayes)</strong></header>
+                    <blockquote style="border-left-color: #39c5bb;">
+                        P(Fallo | Evidencia) = [ P(Evidencia | Fallo) × P(Fallo) ] / P(Evidencia)
+                    </blockquote>
+                    <p>Condición: <strong>{{ res.evidencia_col }} > {{ res.umbral }}</strong></p>
+                    <ul>
+                        <li><strong>P(Fallo):</strong> {{ res.p_fallo }}</li>
+                        <li><strong>P(Evidencia):</strong> {{ res.p_evidencia }}</li>
+                        <li><strong>P(Evidencia | Fallo):</strong> {{ res.p_evidencia_dado_fallo }}</li>
+                    </ul>
+                    <footer>
+                        <strong>Probabilidad Posterior:</strong><br>
+                        <span class="resaltado">P(Fallo | Evidencia) = {{ res.p_fallo_dado_evidencia }}</span>
+                    </footer>
+                </article>
+
+                <article>
+                    <header><strong>Naïve Bayes Gaussiano</strong></header>
+                    <p>Precisión (Accuracy) del modelo:</p>
+                    <progress value="{{ res.acc * 100 }}" max="100"></progress>
+                    <p style="text-align: right; font-weight: bold; color: #39c5bb;">{{ res.acc * 100 }}%</p>
+                </article>
+            </div>
+
+            <div class="grafica-container">
+                <article>
+                    <header><strong>Visualización de Resultados</strong></header>
+                    <p><strong>Impacto de la Evidencia:</strong></p>
+                    <img src="data:image/png;base64,{{ res.grafica_bayes }}" alt="Gráfica Bayes">
+                    <hr>
+                    <p><strong>Matriz de Confusión:</strong></p>
+                    <img src="data:image/png;base64,{{ res.grafica_cm }}" alt="Matriz de Confusión">
+                </article>
+            </div>
+        </div>
+        {% endif %}
+    </main>
+
+    <script>
+        document.getElementById('formulario-bayes').addEventListener('submit', function() {
+            var boton = document.getElementById('btn-ejecutar');
+            boton.setAttribute('aria-busy', 'true');
+            boton.textContent = ' Procesando datos...';
+        });
+    </script>
+</body>
+</html>
